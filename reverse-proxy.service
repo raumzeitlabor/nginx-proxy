@@ -1,0 +1,17 @@
+[Unit]
+Description=HTTP Reverse Proxy
+After=docker.service
+Required=docker.service
+
+[Service]
+Restart=always
+ExecStartPre=/usr/bin/docker pull jwilder/nginx-proxy
+ExecStartPre=-/bin/mkdir -p /srv/docker/reverse-proxy
+ExecStart=/usr/bin/docker run --name=reverse-proxy \
+    --rm=true -p 80:80 -p 443:443 \
+    -v /srv/docker/reverse-proxy:/etc/nginx/certs \
+    -v /var/run/docker.sock:/tmp/docker.sock \
+    jwilder/nginx-proxy
+
+[Install]
+WantedBy=multi-user.target
