@@ -36,7 +36,7 @@ server {
 	listen 80 default_server;
 	server_name _; # This is just an invalid value which will never trigger on a real hostname.
 
-    error_page 503 @maintenance;
+    error_page 503 502 @maintenance;
     root /app/init-web;
 
     location /index.html {
@@ -58,7 +58,7 @@ server {
 	ssl_certificate /etc/nginx/certs/default.crt;
 	ssl_certificate_key /etc/nginx/certs/default.key;
 
-    error_page 503 @maintenance;
+    error_page 503 502 @maintenance;
     root /app/init-web;
 
     location /index.html {
@@ -155,7 +155,7 @@ server {
 		{{ end }}
 	}
 
-    error_page 503 @maintenance;
+    error_page 503 502 @maintenance;
     root /app/init-web;
 
     location /index.html {
@@ -196,7 +196,7 @@ server {
 	ssl_certificate /etc/nginx/certs/default.crt;
 	ssl_certificate_key /etc/nginx/certs/default.key;
 
-    error_page 503 @maintenance;
+    error_page 503 502 @maintenance;
     root /app/init-web;
 
     location /index.html {
