@@ -36,7 +36,7 @@ server {
 	listen 80 default_server;
 	server_name _; # This is just an invalid value which will never trigger on a real hostname.
 
-    error_page 503 502 @maintenance;
+    error_page 503 @maintenance;
     root /app/init-web;
 
     location /index.html {
@@ -44,9 +44,6 @@ server {
     }
 
     location @maintenance {
-        if (-f $request_filename) {
-            break;
-        }
     }
 }
 
@@ -149,6 +146,7 @@ server {
 
 	location / {
 		proxy_pass {{ $proto }}://{{ $host }};
+        proxy_intercept_errors on;
 		{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
 		auth_basic	"Restricted {{ $host }}";
 		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
@@ -156,18 +154,11 @@ server {
 	}
 
     error_page 503 502 @maintenance;
-    root /app/init-web;
-
-    location /index.html {
-        internal;
-        return 503;
-    }
 
     location @maintenance {
+        root /app/init-web;
         internal;
-        if (-f $request_filename) {
-            break;
-        }
+        rewrite ^ /index.html;
     }
 }
 {{ else }}
@@ -181,11 +172,20 @@ server {
 
 	location / {
 		proxy_pass {{ $proto }}://{{ $host }};
+        proxy_intercept_errors on;
 		{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
 		auth_basic	"Restricted {{ $host }}";
 		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
 		{{ end }}
 	}
+
+    error_page 503 502 @maintenance;
+
+    location @maintenance {
+        root /app/init-web;
+        internal;
+        rewrite ^ /index.html;
+    }
 }
 
 {{ if (and (exists "/etc/nginx/certs/default.crt") (exists "/etc/nginx/certs/default.key")) }}
@@ -197,16 +197,11 @@ server {
 	ssl_certificate_key /etc/nginx/certs/default.key;
 
     error_page 503 502 @maintenance;
-    root /app/init-web;
-
-    location /index.html {
-        return 503;
-    }
 
     location @maintenance {
-        if (-f $request_filename) {
-            break;
-        }
+        root /app/init-web;
+        internal;
+        rewrite ^ /index.html;
     }
 }
 {{ end }}
