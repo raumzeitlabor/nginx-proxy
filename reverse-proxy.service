@@ -1,6 +1,7 @@
 [Unit]
 Description=HTTP Reverse Proxy
 After=docker.service
+Requires=docker.service
 
 [Service]
 Restart=always
