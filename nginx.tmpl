@@ -152,6 +152,9 @@ server {
     add_header X-Content-Type-Options nosniff;
     add_header X-XSS-Protection "1; mode=block";
 
+    # see http://www.gnuterrypratchett.com/
+    add_header X-Clacks-Overhead "GNU Terry Pratchett";
+
     #add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"; img-src 'self' data;
 
     root /app/init-web;
