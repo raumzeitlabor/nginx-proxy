@@ -36,8 +36,8 @@ proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
 
 
 server {
-	listen 80 default_server;
-	server_name _; # This is just an invalid value which will never trigger on a real hostname.
+    listen 80 default_server;
+    server_name _; # This is just an invalid value which will never trigger on a real hostname.
 
     error_page 503 @maintenance;
     root /app/init-web;
@@ -54,11 +54,22 @@ server {
 
 {{ if (and (exists "/etc/nginx/certs/default.crt") (exists "/etc/nginx/certs/default.key")) }}
 server {
-	listen 443 ssl spdy;
-	server_name _; 
+    listen 443 ssl spdy;
+    server_name _; 
 
-	ssl_certificate /etc/nginx/certs/default.crt;
-	ssl_certificate_key /etc/nginx/certs/default.key;
+    ssl_ciphers "AES128+EECDH:AES128+EDH";
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    ssl_stapling on; # Requires nginx >= 1.3.7
+    ssl_stapling_verify on; # Requires nginx => 1.3.7
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    ssl_session_timeout 5m;
+    ssl_session_cache shared:SSL:50m;
+
+    ssl_certificate /etc/nginx/certs/default.crt;
+    ssl_certificate_key /etc/nginx/certs/default.key;
 
     error_page 503 @maintenance;
     root /app/init-web;
@@ -78,30 +89,30 @@ server {
 
 upstream {{ $host }} {
 {{ range $container := $containers }}
-	{{ $addrLen := len $container.Addresses }}
-	{{/* If only 1 port exposed, use that */}}
-	{{ if eq $addrLen 1 }}
-		{{ with $address := index $container.Addresses 0 }}
-		   # {{$container.Name}}
-		   server {{ $address.IP }}:{{ $address.Port }};
-		{{ end }}
-	{{/* If more than one port exposed, use the one matching VIRTUAL_PORT env var */}}
-	{{ else if $container.Env.VIRTUAL_PORT }}
-		{{ range $address := .Addresses }}
-		   {{ if eq $address.Port $container.Env.VIRTUAL_PORT }}
-		   # {{$container.Name}}
-		   server {{ $address.IP }}:{{ $address.Port }};
-		   {{ end }}
-		{{ end }}
-	{{/* Else default to standard web port 80 */}}
-	{{ else }}
-		{{ range $address := $container.Addresses }}
-			{{ if eq $address.Port "80" }}
-			# {{$container.Name}}
-			server {{ $address.IP }}:{{ $address.Port }};
-			{{ end }}
-		{{ end }}
-	{{ end }}
+    {{ $addrLen := len $container.Addresses }}
+    {{/* If only 1 port exposed, use that */}}
+    {{ if eq $addrLen 1 }}
+        {{ with $address := index $container.Addresses 0 }}
+           # {{$container.Name}}
+           server {{ $address.IP }}:{{ $address.Port }};
+        {{ end }}
+    {{/* If more than one port exposed, use the one matching VIRTUAL_PORT env var */}}
+    {{ else if $container.Env.VIRTUAL_PORT }}
+        {{ range $address := .Addresses }}
+           {{ if eq $address.Port $container.Env.VIRTUAL_PORT }}
+           # {{$container.Name}}
+           server {{ $address.IP }}:{{ $address.Port }};
+           {{ end }}
+        {{ end }}
+    {{/* Else default to standard web port 80 */}}
+    {{ else }}
+        {{ range $address := $container.Addresses }}
+            {{ if eq $address.Port "80" }}
+            # {{$container.Name}}
+            server {{ $address.IP }}:{{ $address.Port }};
+            {{ end }}
+        {{ end }}
+    {{ end }}
 {{ end }}
 }
 
@@ -124,13 +135,13 @@ upstream {{ $host }} {
 {{ if (and (ne $cert "") (exists (printf "/etc/nginx/certs/%s.crt" $cert)) (exists (printf "/etc/nginx/certs/%s.key" $cert))) }}
 
 server {
-	server_name {{ $host }};
-	return 301 https://$host$request_uri;
+    server_name {{ $host }};
+    return 301 https://$host$request_uri;
 }
 
 server {
-	server_name {{ $host }};
-	listen 443 ssl spdy;
+    server_name {{ $host }};
+    listen 443 ssl spdy;
 
     # based on https://cipherli.st/
     ssl_ciphers "AES128+EECDH:AES128+EDH";
@@ -141,13 +152,13 @@ server {
     resolver 8.8.8.8 8.8.4.4 valid=300s;
     resolver_timeout 5s;
 
-	ssl_session_timeout 5m;
-	ssl_session_cache shared:SSL:50m;
+    ssl_session_timeout 5m;
+    ssl_session_cache shared:SSL:50m;
 
-	ssl_certificate /etc/nginx/certs/{{ (printf "%s.crt" $cert) }};
-	ssl_certificate_key /etc/nginx/certs/{{ (printf "%s.key" $cert) }};
+    ssl_certificate /etc/nginx/certs/{{ (printf "%s.crt" $cert) }};
+    ssl_certificate_key /etc/nginx/certs/{{ (printf "%s.key" $cert) }};
 
-	add_header Strict-Transport-Security "max-age=31536000; includeSubdomains";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains";
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
     add_header X-XSS-Protection "1; mode=block";
@@ -164,23 +175,23 @@ server {
         rewrite ^ /index.html break;
     }
 
-	{{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
-	include {{ printf "/etc/nginx/vhost.d/%s" $host }};
-	{{ end }}
+    {{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
+    include {{ printf "/etc/nginx/vhost.d/%s" $host }};
+    {{ end }}
 
-	location / {
-		proxy_pass {{ $proto }}://{{ $host }};
+    location / {
+        proxy_pass {{ $proto }}://{{ $host }};
         proxy_intercept_errors on;
-		{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
-		auth_basic	"Restricted {{ $host }}";
-		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
-		{{ end }}
-	}
+        {{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
+        auth_basic    "Restricted {{ $host }}";
+        auth_basic_user_file    {{ (printf "/etc/nginx/htpasswd/%s" $host) }};
+        {{ end }}
+    }
 }
 {{ else }}
 
 server {
-	server_name {{ $host }};
+    server_name {{ $host }};
 
     root /app/init-web;
     error_page 503 502 @maintenance;
@@ -189,27 +200,38 @@ server {
         rewrite ^ /index.html break;
     }
 
-	{{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
-	include {{ printf "/etc/nginx/vhost.d/%s" $host }};
-	{{ end }}
+    {{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
+    include {{ printf "/etc/nginx/vhost.d/%s" $host }};
+    {{ end }}
 
-	location / {
-		proxy_pass {{ $proto }}://{{ $host }};
+    location / {
+        proxy_pass {{ $proto }}://{{ $host }};
         proxy_intercept_errors on;
-		{{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
-		auth_basic	"Restricted {{ $host }}";
-		auth_basic_user_file	{{ (printf "/etc/nginx/htpasswd/%s" $host) }};
-		{{ end }}
-	}
+        {{ if (exists (printf "/etc/nginx/htpasswd/%s" $host)) }}
+        auth_basic    "Restricted {{ $host }}";
+        auth_basic_user_file    {{ (printf "/etc/nginx/htpasswd/%s" $host) }};
+        {{ end }}
+    }
 }
 
 {{ if (and (exists "/etc/nginx/certs/default.crt") (exists "/etc/nginx/certs/default.key")) }}
 server {
-	server_name {{ $host }};
-	listen 443 ssl spdy;
+    server_name {{ $host }};
+    listen 443 ssl spdy;
 
-	ssl_certificate /etc/nginx/certs/default.crt;
-	ssl_certificate_key /etc/nginx/certs/default.key;
+    ssl_ciphers "AES128+EECDH:AES128+EDH";
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_prefer_server_ciphers on;
+    ssl_stapling on; # Requires nginx >= 1.3.7
+    ssl_stapling_verify on; # Requires nginx => 1.3.7
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+
+    ssl_session_timeout 5m;
+    ssl_session_cache shared:SSL:50m;
+
+    ssl_certificate /etc/nginx/certs/default.crt;
+    ssl_certificate_key /etc/nginx/certs/default.key;
 
     root /app/init-web;
     error_page 503 502 @maintenance;
