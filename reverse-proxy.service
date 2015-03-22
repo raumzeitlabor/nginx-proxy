@@ -11,6 +11,7 @@ ExecStart=/usr/bin/docker run --name=reverse-proxy \
     --rm=true -p 80:80 -p 443:443 \
     -v /srv/docker/reverse-proxy:/etc/nginx/certs \
     -v /var/run/docker.sock:/tmp/docker.sock \
+    --cap-drop=NET_RAW \
     raumzeitlabor/nginx-proxy
 ExecStop=/usr/bin/docker pull raumzeitlabor/nginx-proxy
 
