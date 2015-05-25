@@ -158,7 +158,7 @@ server {
     ssl_certificate /etc/nginx/certs/{{ (printf "%s.crt" $cert) }};
     ssl_certificate_key /etc/nginx/certs/{{ (printf "%s.key" $cert) }};
 
-    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains";
+    add_header Strict-Transport-Security "max-age=31536000; includeSubdomains; preload";
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
     add_header X-XSS-Protection "1; mode=block";
