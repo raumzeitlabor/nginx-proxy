@@ -10,6 +10,7 @@ ExecStartPre=-/bin/mkdir -p /srv/docker/reverse-proxy
 ExecStart=/usr/bin/docker run --name=reverse-proxy \
     --memory=64M --rm=true -p 80:80 -p 443:443 \
     -v /srv/docker/reverse-proxy:/etc/nginx/certs \
+    -v /etc/letsencrypt:/app/letsencrypt \
     -v /var/run/docker.sock:/tmp/docker.sock \
     --cap-drop=NET_RAW \
     raumzeitlabor/nginx-proxy
