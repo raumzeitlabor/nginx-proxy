@@ -46,6 +46,13 @@ server {
         return 503;
     }
 
+    location /.well-known/acme-challenge {
+        alias /app/letsencrypt;
+        location ~ /.well-known/acme-challenge/(.*) {
+            add_header Content-Type application/jose+json;
+        }
+    }
+
     location @maintenance {
     }
 
@@ -76,6 +83,13 @@ server {
 
     location /index.html {
         return 503;
+    }
+
+    location /.well-known/acme-challenge {
+        alias /app/letsencrypt;
+        location ~ /.well-known/acme-challenge/(.*) {
+            add_header Content-Type application/jose+json;
+        }
     }
 
     location @maintenance {
@@ -179,6 +193,13 @@ server {
     include {{ printf "/etc/nginx/vhost.d/%s" $host }};
     {{ end }}
 
+    location /.well-known/acme-challenge {
+        alias /app/letsencrypt;
+        location ~ /.well-known/acme-challenge/(.*) {
+            add_header Content-Type application/jose+json;
+        }
+    }
+
     location / {
         proxy_pass {{ $proto }}://{{ $host }};
         proxy_intercept_errors on;
@@ -203,6 +224,13 @@ server {
     {{ if (exists (printf "/etc/nginx/vhost.d/%s" $host)) }}
     include {{ printf "/etc/nginx/vhost.d/%s" $host }};
     {{ end }}
+
+    location /.well-known/acme-challenge {
+        alias /app/letsencrypt;
+        location ~ /.well-known/acme-challenge/(.*) {
+            add_header Content-Type application/jose+json;
+        }
+    }
 
     location / {
         proxy_pass {{ $proto }}://{{ $host }};
